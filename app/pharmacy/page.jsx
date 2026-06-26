@@ -1,7 +1,6 @@
 'use client';
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import Tesseract from 'tesseract.js';
 import { Settings2, ScanLine, CheckCircle, AlertTriangle, RefreshCcw, Camera, Loader2 } from 'lucide-react';
 import { getCompartmentsForMedicines } from '@/lib/inventory';
 
@@ -37,47 +36,54 @@ export default function PharmacyCounter() {
     }
   };
 
-  const handleScanSuccess = (decodedText) => {
+
+  const handleScanSuccess = useCallback((decodedText) => {
     try {
       const parsed = JSON.parse(decodedText);
       processPrescriptionData(parsed);
     } catch (e) {
       setScanError("QR code does not contain valid prescription.");
     }
-  };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsScanning(true);
-    setScanProgress(0);
-    setOcrStatusMsg({ type: 'info', text: 'Extracting text...' });
+    setScanProgress(20);
+    setOcrStatusMsg({ type: 'info', text: 'Processing image...' });
     setScanError(null);
 
-    try {
-      const result = await Tesseract.recognize(file, 'eng', {
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            setScanProgress(Math.round(m.progress * 100));
-          }
-        }
-      });
-      
-      const extractedText = result.data.text;
-      if (!extractedText.trim()) throw new Error("No text found.");
+    const toBase64 = (f) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(f);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
 
-      setOcrStatusMsg({ type: 'info', text: 'Analyzing with AI...' });
+    try {
+      const base64Image = await toBase64(file);
+      
+      setScanProgress(50);
+      setOcrStatusMsg({ type: 'info', text: 'Sending image to AI Vision...' });
 
       const parseRes = await fetch('/api/parse-prescription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: extractedText })
+        body: JSON.stringify({ image: base64Image })
       });
 
+      setScanProgress(80);
       const parsedData = await parseRes.json();
       if (parseRes.ok) {
-        processPrescriptionData(parsedData);
+        // Handle the AI's explicit "not a prescription" signal
+        if (parsedData.error === 'not_a_prescription') {
+          setOcrStatusMsg({ type: 'error', text: 'The uploaded image does not appear to be a prescription. Please try again with a valid prescription photo.' });
+        } else {
+          processPrescriptionData(parsedData);
+        }
       } else {
         setOcrStatusMsg({ type: 'error', text: parsedData.error || 'Parsing failed.' });
       }
@@ -85,6 +91,7 @@ export default function PharmacyCounter() {
       setOcrStatusMsg({ type: 'error', text: err.message || 'Failed to process.' });
     } finally {
       setIsScanning(false);
+      setScanProgress(0);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -126,6 +133,7 @@ export default function PharmacyCounter() {
     setScanError(null);
     setDispenseStatus(null);
     setOcrStatusMsg(null);
+    setScanProgress(0);
   };
 
   const handleManualAction = async (actionType, compartmentNum = null) => {
