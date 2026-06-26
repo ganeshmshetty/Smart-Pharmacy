@@ -20,21 +20,19 @@ A comprehensive IoT solution that pairs a Next.js web application with an ESP32-
 
 - **Frontend**: Next.js 14, React 18, Tailwind CSS, Lucide React
 - **Hardware/Firmware**: ESP32, C/C++ (Arduino framework)
-- **Communication**: MQTT protocol (Mosquitto Broker)
+- **Communication**: MQTT protocol (HiveMQ Public Cloud Broker)
 - **Utilities**: Tesseract.js (OCR), html5-qrcode (Scanner)
 
 ## 🚀 Getting Started
 
-### 1. MQTT Broker Setup
+### 1. MQTT Broker — HiveMQ (No Setup Required)
 
-The system relies on a local Mosquitto MQTT broker for communication between the web app and the ESP32.
+The system uses the **HiveMQ public broker** (`broker.hivemq.com`), which requires no installation, account, or authentication.
 
-1. Ensure Mosquitto is installed on your machine.
-2. Use the provided `mosquitto.conf` configuration file, which allows anonymous connections on port `1883`.
-3. Start the broker:
-   ```bash
-   mosquitto -c mosquitto.conf
-   ```
+- **Web app (Next.js)** connects via **WebSocket TLS** on port `8884` (`wss://broker.hivemq.com:8884/mqtt`)
+- **ESP32 firmware** connects via **plain TCP** on port `1883`
+
+> **Note:** The HiveMQ public broker is shared and has no persistent storage. It is intended for testing and development only. Do not send sensitive patient data over it.
 
 ### 2. Hardware Setup (ESP32)
 

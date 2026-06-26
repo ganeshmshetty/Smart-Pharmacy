@@ -1,7 +1,7 @@
     /*
      * ================================================================
      *  Smart Pharmacy Shelf System — ESP32 Firmware
-     *  pharmacy_shelf_local_broker.ino
+     *  pharmacy_shelf_hivemq.ino
      * ================================================================
      *
      *  HARDWARE:
@@ -93,8 +93,8 @@
     const char* WIFI_SSID     = "No Internet";
     const char* WIFI_PASSWORD = "GM123456";
 
-    // Local Mosquitto Broker
-    const char* MQTT_BROKER    = "10.94.96.217";
+    // HiveMQ Public Broker (free, no auth required)
+    const char* MQTT_BROKER    = "broker.hivemq.com";
     const int   MQTT_PORT      = 1883;
     const char* MQTT_CLIENT_ID = "pharmacy-esp32-shelf-01";
 
