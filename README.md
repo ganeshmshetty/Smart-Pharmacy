@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Smart Pharmacy IoT System
 
-## Getting Started
+A comprehensive IoT solution that pairs a Next.js web application with an ESP32-based smart shelf to securely and efficiently dispense medications. The system leverages real-time MQTT communication to control physical compartments, requiring RFID authentication for sensitive medications.
 
-First, run the development server:
+## 🌟 Key Features
+
+### Web Interface
+- **Next.js & Tailwind CSS**: A modern, responsive web application with dedicated routes for `admin`, `doctor`, and `pharmacy`.
+- **Prescription Processing**: Built-in Optical Character Recognition (OCR) using `tesseract.js`.
+- **QR Code Integration**: Generate and scan QR codes for prescriptions using `qrcode` and `html5-qrcode`.
+- **Real-Time Control**: Communicates with the physical shelf via local MQTT messages.
+
+### Hardware (ESP32 Smart Shelf)
+- **Normal & Sensitive Compartments**: Two separate dispensing paths controlled by servo motors.
+- **RFID Authentication**: Requires pharmacist staff badge scan (via RC522 RFID reader) before opening the sensitive compartment.
+- **Visual Feedback**: Traffic LED modules (Red/Yellow/Green) provide status indication.
+- **MQTT Integration**: Subscribes to dispensing commands and publishes real-time status updates back to the web app.
+
+## 🛠️ Technology Stack
+
+- **Frontend**: Next.js 14, React 18, Tailwind CSS, Lucide React
+- **Hardware/Firmware**: ESP32, C/C++ (Arduino framework)
+- **Communication**: MQTT protocol (Mosquitto Broker)
+- **Utilities**: Tesseract.js (OCR), html5-qrcode (Scanner)
+
+## 🚀 Getting Started
+
+### 1. MQTT Broker Setup
+
+The system relies on a local Mosquitto MQTT broker for communication between the web app and the ESP32.
+
+1. Ensure Mosquitto is installed on your machine.
+2. Use the provided `mosquitto.conf` configuration file, which allows anonymous connections on port `1883`.
+3. Start the broker:
+   ```bash
+   mosquitto -c mosquitto.conf
+   ```
+
+### 2. Hardware Setup (ESP32)
+
+1. Open `afd.c` in the Arduino IDE (or PlatformIO).
+2. Install the required libraries: `PubSubClient`, `MFRC522`, `ESP32Servo`, and `ArduinoJson`.
+3. Update the Wi-Fi credentials and the `MQTT_BROKER` IP address in `afd.c` to match your local network.
+4. Flash the firmware to your ESP32 board.
+5. Wire the RC522 RFID, Traffic LED modules, and SG90 servos according to the pin definitions in the C code comments.
+
+### 3. Web Application Setup
+
+First, install the dependencies:
+
+```bash
+npm install
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to access the web interface.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 📂 Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- `/app`: Next.js application routes (`admin`, `doctor`, `pharmacy`, etc.)
+- `/components`: Reusable React components
+- `/lib`: Helper functions and MQTT client configuration
+- `afd.c`: The ESP32 firmware source code
+- `mosquitto.conf`: Configuration file for the local MQTT broker
