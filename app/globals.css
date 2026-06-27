@@ -13,3 +13,18 @@
     @apply bg-white border border-gray-200 rounded-xl shadow-sm;
   }
 }
+
+/* ── Suppress html5-qrcode default UI chrome ── */
+#qr-reader-stream > img,
+#qr-reader-stream > div[style*="text-align"],
+#qr-reader-stream select,
+#qr-reader-stream button:not([class]),
+#qr-reader-stream span { display: none !important; }
+
+#qr-reader-stream video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0 !important;
+  display: block !important;
+}
