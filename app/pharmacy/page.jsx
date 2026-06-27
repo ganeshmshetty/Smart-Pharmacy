@@ -22,15 +22,6 @@ export default function PharmacyCounter() {
 
   const [inputMode, setInputMode] = useState('qr');
 
-  const speak = (text) => {
-    if ('speechSynthesis' in window) {
-      const msg = new SpeechSynthesisUtterance(text);
-      msg.rate = 0.9;
-      msg.pitch = 1;
-      window.speechSynthesis.speak(msg);
-    }
-  };
-
   const processPrescriptionData = (parsed) => {
     if (parsed.patient && Array.isArray(parsed.medications) && parsed.medications.length > 0) {
       setScannedData(parsed);
@@ -41,7 +32,6 @@ export default function PharmacyCounter() {
       
       setScanError(null);
       setOcrStatusMsg(null);
-      speak(`Prescription verified for ${parsed.patient}.`);
     } else {
       setScanError("Invalid prescription format.");
     }
@@ -128,10 +118,6 @@ export default function PharmacyCounter() {
       const allOk = results.every(r => r.ok);
       if (allOk) {
         setDispenseStatus({ success: true, msg: `Compartments activated: ${requiredCompartments.join(', ')}` });
-        
-        const medNames = scannedData.medications.map(m => m.medicine).join(' and ');
-        const compNames = requiredCompartments.join(' and ');
-        speak(`Dispensing ${medNames}. Please collect from compartment ${compNames}.`);
       } else {
         setDispenseStatus({ success: false, msg: 'Some compartments failed to activate.' });
       }
