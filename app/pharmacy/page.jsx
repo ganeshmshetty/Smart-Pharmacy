@@ -2,11 +2,12 @@
 import { useState, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { Settings2, ScanLine, CheckCircle, AlertTriangle, RefreshCcw, Camera, Loader2 } from 'lucide-react';
-import { getCompartmentsForMedicines } from '@/lib/inventory';
+import { useInventory } from '@/hooks/useInventory';
 
 const QrReader = dynamic(() => import('@/components/QrReader'), { ssr: false });
 
 export default function PharmacyCounter() {
+  const { getCompartmentsForMedicines } = useInventory();
   const [scannedData, setScannedData] = useState(null);
   const [requiredCompartments, setRequiredCompartments] = useState([]);
   const [scanError, setScanError] = useState(null);
@@ -44,7 +45,7 @@ export default function PharmacyCounter() {
     } catch (e) {
       setScanError("QR code does not contain valid prescription.");
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [getCompartmentsForMedicines]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   const handleImageUpload = async (e) => {

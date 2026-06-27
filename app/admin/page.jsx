@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Activity, Archive, Lock, Unlock, AlertOctagon, Key, EyeOff, Radio, Cpu, History, Search } from 'lucide-react';
+import { Activity, Archive, Lock, Unlock, AlertOctagon, Key, EyeOff, Radio, Cpu, History, Search, Pill, Trash2, Plus } from 'lucide-react';
+import { useInventory } from '@/hooks/useInventory';
 
 const STATUS_MAP = {
   idle: { label: 'Idle', color: 'gray', icon: Archive },
@@ -18,6 +19,18 @@ export default function AdminDashboard() {
   const [c1Status, setC1Status] = useState({ status: 'idle', ts: new Date().toISOString() });
   const [c2Status, setC2Status] = useState({ status: 'idle', ts: new Date().toISOString() });
   const [now, setNow] = useState(new Date());
+
+  const { inventory, isLoaded, addMedicine, removeMedicine } = useInventory();
+  const [newMedName, setNewMedName] = useState('');
+  const [newMedComp, setNewMedComp] = useState('1');
+
+  const handleAddMedicine = (e) => {
+    e.preventDefault();
+    if (newMedName.trim()) {
+      addMedicine(newMedName, newMedComp);
+      setNewMedName('');
+    }
+  };
 
   useEffect(() => {
     const sse = new EventSource('/api/status');
@@ -179,6 +192,65 @@ export default function AdminDashboard() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Inventory Management Section */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mt-6 sm:mt-8">
+        <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-200 flex justify-between items-center bg-gray-50/50">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center">
+            <Pill className="mr-2 h-5 w-5 text-gray-400" />
+            Medicine Inventory
+          </h2>
+          <span className="text-xs font-mono bg-white px-2.5 py-1 rounded-md border border-gray-200 text-gray-500">
+            {isLoaded ? Object.keys(inventory).length : 0} items
+          </span>
+        </div>
+        
+        <div className="p-4 sm:p-6">
+          <form onSubmit={handleAddMedicine} className="flex flex-col sm:flex-row gap-3 mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <input 
+              type="text" 
+              placeholder="Medicine Name (e.g., Aspirin)" 
+              value={newMedName}
+              onChange={(e) => setNewMedName(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-black"
+              required
+            />
+            <select 
+              value={newMedComp}
+              onChange={(e) => setNewMedComp(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-black bg-white"
+            >
+              <option value="1">Compartment 1 (Normal)</option>
+              <option value="2">Compartment 2 (Sensitive)</option>
+            </select>
+            <button 
+              type="submit"
+              className="flex items-center justify-center px-4 py-2 bg-black text-white text-sm font-medium rounded-md hover:bg-gray-900 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Add
+            </button>
+          </form>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {isLoaded && Object.entries(inventory).map(([med, comp]) => (
+              <div key={med} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-900 capitalize">{med}</span>
+                  <span className="text-xs text-gray-500">Compartment {comp}</span>
+                </div>
+                <button 
+                  onClick={() => removeMedicine(med)}
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  title="Remove Medicine"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
