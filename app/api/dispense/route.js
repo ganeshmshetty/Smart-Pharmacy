@@ -29,8 +29,11 @@ export async function POST(request) {
 // Robust Serverless Publish & Flush Helper
 async function publishMessage(topic, payload) {
   return new Promise((resolve, reject) => {
-    const brokerUrl = `mqtt://${process.env.MQTT_BROKER}:${process.env.MQTT_PORT || 1883}`;
-    const localClient = mqtt.connect(brokerUrl);
+    const localClient = mqtt.connect({
+      host: process.env.MQTT_BROKER.trim(),
+      port: parseInt(process.env.MQTT_PORT || '1883', 10),
+      protocol: 'mqtt'
+    });
 
     // Timeout safety fallback
     const timeout = setTimeout(() => {
