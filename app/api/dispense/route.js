@@ -1,24 +1,13 @@
 import { NextResponse } from 'next/server';
-import { client } from '@/lib/mqttClient';
+import mqtt from 'mqtt';
 
 export async function POST(request) {
-  try {
-    await client.ensureConnected();
-  } catch (err) {
-    return NextResponse.json({ error: "MQTT not connected: " + err.message }, { status: 503 });
-  }
-
   try {
     const body = await request.json();
     const dispenseTopic = process.env.MQTT_TOPIC_DISPENSE || 'pharmacy/dispense';
 
     if (body.reset) {
-      await new Promise((resolve, reject) => {
-        client.getMqttClient().publish(dispenseTopic, JSON.stringify({ reset: true }), (err) => {
-          if (err) reject(err);
-          else resolve();
-        });
-      });
+      await publishMessage(dispenseTopic, { reset: true });
       return NextResponse.json({ success: true, message: "Reset signal sent" });
     }
 
@@ -30,15 +19,47 @@ export async function POST(request) {
       compartment: body.compartment
     };
 
-    await new Promise((resolve, reject) => {
-      client.getMqttClient().publish(dispenseTopic, JSON.stringify(payload), (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-    
+    await publishMessage(dispenseTopic, payload);
     return NextResponse.json({ success: true, message: `Compartment ${body.compartment} activated` });
   } catch (error) {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json({ error: error.message || "Invalid JSON body" }, { status: 503 });
   }
+}
+
+// Robust Serverless Publish & Flush Helper
+async function publishMessage(topic, payload) {
+  return new Promise((resolve, reject) => {
+    const brokerUrl = `mqtt://${process.env.MQTT_BROKER}:${process.env.MQTT_PORT || 1883}`;
+    const localClient = mqtt.connect(brokerUrl);
+
+    // Timeout safety fallback
+    const timeout = setTimeout(() => {
+      localClient.end(true);
+      reject(new Error("MQTT connection or publish timed out"));
+    }, 5000);
+
+    localClient.on('connect', () => {
+      // QoS 1 guarantees the broker acknowledges receipt of the message
+      localClient.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
+        if (err) {
+          clearTimeout(timeout);
+          localClient.end(true);
+          reject(err);
+        } else {
+          // Gracefully close connection (flushes socket buffer)
+          localClient.end(false, () => {
+            clearTimeout(timeout);
+            console.log("MQTT message successfully flushed and connection closed.");
+            resolve();
+          });
+        }
+      });
+    });
+
+    localClient.on('error', (err) => {
+      clearTimeout(timeout);
+      localClient.end(true);
+      reject(err);
+    });
+  });
 }
