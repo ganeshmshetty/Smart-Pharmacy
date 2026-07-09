@@ -94,7 +94,7 @@
     const char* WIFI_PASSWORD = "GM123456";
 
     // Local Mosquitto Broker
-    const char* MQTT_BROKER    = "172.17.3.88";
+    const char* MQTT_BROKER    = "34.93.149.189";
     const int   MQTT_PORT      = 1883;
     const char* MQTT_CLIENT_ID = "pharmacy-esp32-shelf-01";
 

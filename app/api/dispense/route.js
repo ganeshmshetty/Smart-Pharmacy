@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { client } from '@/lib/mqttClient';
 
 export async function POST(request) {
-  if (!client.isConnected()) {
-    return NextResponse.json({ error: "MQTT not connected" }, { status: 503 });
+  try {
+    await client.ensureConnected();
+  } catch (err) {
+    return NextResponse.json({ error: "MQTT not connected: " + err.message }, { status: 503 });
   }
 
   try {
