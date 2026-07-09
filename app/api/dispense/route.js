@@ -10,7 +10,9 @@ export async function POST(request) {
     const dispenseTopic = process.env.MQTT_TOPIC_DISPENSE || 'pharmacy/dispense';
 
     if (body.reset) {
-      await publishWithQos1(dispenseTopic, { reset: true });
+      client.getMqttClient().publish(dispenseTopic, JSON.stringify({ reset: true }), { qos: 0 });
+      // Wait 500ms to allow network buffer to flush
+      await new Promise(resolve => setTimeout(resolve, 500));
       return NextResponse.json({ success: true, message: "Reset signal sent" });
     }
 
@@ -22,29 +24,14 @@ export async function POST(request) {
       compartment: body.compartment
     };
 
-    // 2. Publish with QoS 1 and await the PUBACK from the broker
-    await publishWithQos1(dispenseTopic, payload);
+    // 2. Publish with QoS 0 (fire and forget)
+    client.getMqttClient().publish(dispenseTopic, JSON.stringify(payload), { qos: 0 });
+
+    // 3. Wait 500ms to allow Vercel's OS buffer to flush the packet to the broker
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     return NextResponse.json({ success: true, message: `Compartment ${body.compartment} activated` });
   } catch (error) {
     return NextResponse.json({ error: "MQTT dispense failed: " + (error.message || error) }, { status: 503 });
   }
-}
-
-// Publish helper wrapping QoS 1 in a Promise
-async function publishWithQos1(topic, payload) {
-  return new Promise((resolve, reject) => {
-    const mqttClient = client.getMqttClient();
-    
-    // Set a safety timeout
-    const timeout = setTimeout(() => {
-      reject(new Error("Publish acknowledgment (PUBACK) timed out"));
-    }, 4000);
-
-    mqttClient.publish(topic, JSON.stringify(payload), { qos: 1 }, (err) => {
-      clearTimeout(timeout);
-      if (err) reject(err);
-      else resolve();
-    });
-  });
 }
