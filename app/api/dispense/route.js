@@ -13,7 +13,12 @@ export async function POST(request) {
     const dispenseTopic = process.env.MQTT_TOPIC_DISPENSE || 'pharmacy/dispense';
 
     if (body.reset) {
-      client.getMqttClient().publish(dispenseTopic, JSON.stringify({ reset: true }));
+      await new Promise((resolve, reject) => {
+        client.getMqttClient().publish(dispenseTopic, JSON.stringify({ reset: true }), (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
       return NextResponse.json({ success: true, message: "Reset signal sent" });
     }
 
@@ -25,7 +30,12 @@ export async function POST(request) {
       compartment: body.compartment
     };
 
-    client.getMqttClient().publish(dispenseTopic, JSON.stringify(payload));
+    await new Promise((resolve, reject) => {
+      client.getMqttClient().publish(dispenseTopic, JSON.stringify(payload), (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
     
     return NextResponse.json({ success: true, message: `Compartment ${body.compartment} activated` });
   } catch (error) {
