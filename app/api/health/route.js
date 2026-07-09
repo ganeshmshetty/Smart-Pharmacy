@@ -4,5 +4,10 @@ import { client } from '@/lib/mqttClient';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  return NextResponse.json({ connected: client.isConnected() });
+  try {
+    await client.ensureConnected();
+    return NextResponse.json({ connected: true });
+  } catch (err) {
+    return NextResponse.json({ connected: false, error: err.message });
+  }
 }
